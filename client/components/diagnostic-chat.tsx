@@ -21,6 +21,22 @@ interface DiagnosticSession {
   created_at: string;
 }
 
+interface DiagnosticResult {
+  id: number;
+  session_id: number;
+  input_message: string;
+  output_text: string;
+  created_at: string;
+}
+
+interface SessionDetails {
+  session_id: number;
+  input_text: string;
+  diagnostic_results: DiagnosticResult[];
+  parts: any[];
+  created_at: string;
+}
+
 export function DiagnosticChat({
   onDiagnosticComplete,
   initialDiagnosis = null,
@@ -37,6 +53,31 @@ export function DiagnosticChat({
     scrollToBottom,
     messagesEndRef,
   } = useDiagnosticSession({ initialDiagnosis, vehicleData });
+
+  useEffect(() => {
+    const loadSessionHistory = async () => {
+      if (sessionId) {
+        try {
+          const sessionDetails = (await ApiService.getDiagnosticSession(
+            Number(sessionId)
+          )) as SessionDetails;
+          if (sessionDetails.diagnostic_results) {
+            const historyMessages = sessionDetails.diagnostic_results
+              .map((result: DiagnosticResult) => [
+                { role: "user" as const, content: result.input_message },
+                { role: "assistant" as const, content: result.output_text },
+              ])
+              .flat();
+            setMessages(historyMessages);
+          }
+        } catch (error) {
+          console.error("Failed to load session history:", error);
+        }
+      }
+    };
+
+    loadSessionHistory();
+  }, [sessionId, setMessages]);
 
   const { socket, currentSessionId, sendMessage, connectionStatus } =
     useWebSocket({

@@ -140,19 +140,33 @@ export class ApiService {
   }
 
   static async getDiagnosticSession(sessionId: number): Promise<any> {
-    const token = getToken();
-    const response = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const token = getToken();
+      console.log(`Fetching session ${sessionId} with token: ${token ? 'exists' : 'missing'}`);
+      
+      const response = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch diagnostic session details");
+      console.log(`Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
+        throw new Error(errorData.detail || `Failed to fetch diagnostic session: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Successfully fetched session data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in getDiagnosticSession:', error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   static closeWebSocket(): void {

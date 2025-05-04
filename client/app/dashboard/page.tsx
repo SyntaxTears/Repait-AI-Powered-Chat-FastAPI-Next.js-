@@ -79,7 +79,7 @@ export default function DashboardPage() {
               Number(sessionId)
             );
             setSessionDetails(sessionDetails);
-            setPredictedParts(sessionDetails.predicted_parts || []);
+            setPredictedParts(sessionDetails.parts || []);
           } catch (error) {
             console.error("Failed to fetch session details", error);
           }
@@ -183,8 +183,15 @@ export default function DashboardPage() {
                   );
                   setCurrentSession({ id: session.session_id });
                   setSessionDetails(sessionDetails);
-                  setDiagnosticResult(sessionDetails.diagnostic_result || null);
-                  setPredictedParts(sessionDetails.predicted_parts || []);
+                  // Get the latest diagnostic result from the array
+                  const latestDiagnostic =
+                    sessionDetails.diagnostic_results?.length > 0
+                      ? sessionDetails.diagnostic_results[
+                          sessionDetails.diagnostic_results.length - 1
+                        ].output_text
+                      : null;
+                  setDiagnosticResult(latestDiagnostic);
+                  setPredictedParts(sessionDetails.parts || []);
                 } catch (error) {
                   console.error("Failed to load session details", error);
                 } finally {
