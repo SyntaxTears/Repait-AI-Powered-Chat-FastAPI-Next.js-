@@ -1,7 +1,7 @@
 import { getToken } from "./auth";
 
-const BASE_URL = "http://localhost:8000";
-const WS_URL = "ws://localhost:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
 
 export class ApiService {
   private static socket: WebSocket | null = null;
@@ -119,7 +119,7 @@ export class ApiService {
 
   static async getDiagnosticSessions(): Promise<any[]> {
     const token = getToken();
-    console.log('Token for sessions request:', token ? 'Exists' : 'Missing');
+    console.log("Token for sessions request:", token ? "Exists" : "Missing");
     const response = await fetch(`${BASE_URL}/sessions`, {
       method: "GET",
       headers: {
@@ -128,7 +128,11 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      console.error('Sessions request failed:', response.status, response.statusText);
+      console.error(
+        "Sessions request failed:",
+        response.status,
+        response.statusText
+      );
       throw new Error("Failed to fetch diagnostic sessions");
     }
 
