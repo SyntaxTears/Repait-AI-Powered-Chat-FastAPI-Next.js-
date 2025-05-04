@@ -32,6 +32,7 @@ class DiagnosticResult(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("sessions.id"))
+    input_message = Column(Text)  # Added input_message field
     output_text = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

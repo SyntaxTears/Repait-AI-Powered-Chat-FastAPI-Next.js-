@@ -31,7 +31,7 @@ app = FastAPI(title="Detect Auto API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["http://localhost:3000"],  # Frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -121,10 +121,10 @@ async def get_diagnostic_session(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Fetch diagnostic result
-    diagnostic_result = db.query(DiagnosticResult).filter(
+    # Fetch all diagnostic results for this session
+    diagnostic_results = db.query(DiagnosticResult).filter(
         DiagnosticResult.session_id == session_id
-    ).first()
+    ).all()
     
     # Fetch parts predictions
     parts = db.query(PartPrediction).filter(
@@ -139,7 +139,12 @@ async def get_diagnostic_session(
     return {
         "session_id": session.id,
         "input_text": session.input_text,
-        "diagnostic_result": diagnostic_result.output_text if diagnostic_result else None,
+        "diagnostic_results": [
+            {
+                "input_message": result.input_message,  
+                "output_text": result.output_text
+            } for result in diagnostic_results
+        ] if diagnostic_results else [],
         "parts": [{
             "id": part.id,
             "name": part.part_name,
@@ -170,6 +175,7 @@ async def start_diagnostic_session(
         "input_text": session.input_text,
         "created_at": session.created_at
     }
+
 
 @app.websocket("/ws/diagnostics/{session_id}")
 async def diagnostic_websocket(
@@ -266,6 +272,7 @@ async def diagnostic_websocket(
                         try:
                             diagnostic_result = DiagnosticResult(
                                 session_id=session.id,
+                                input_message=user_input,  # Store input message
                                 output_text=full_result
                             )
                             db.add(diagnostic_result)
@@ -424,10 +431,6 @@ async def summarize_order(
     db.refresh(summary)
     
     return summary
-
-@app.post("/auth/logout")
-async def logout(current_user: User = Depends(get_current_user)):
-    return {"message": "Successfully logged out"}
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
